@@ -32,11 +32,20 @@ fn main() {
     ];
 
     // 描画用のフィールド生成
+    let mut field_buf = field;
 
-    // フィールドを描写
+    // 描画用フィールドにブロックの情報を書き込む
+    for y in 0..4 {
+        for x in 0..4 {
+            if block[y][x] == 1 {
+                field_buf[y+8][x+4] = 1;
+            }
+        }
+    }
+    // フィールドを描画
     for y in 0..21 {
         for x in 0..13 {
-            if x ==0 || x == 12 {
+            if field_buf[y][x] == 1 {
                 print!("[]");
             } else {
                 print!(" .");
