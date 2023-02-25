@@ -3,5 +3,33 @@
 version = 3
 
 [[package]]
+name = "getch"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdf8bd3f50b5db3f7aac456879b7d520662577fba651bbc00ca4fe32ff657b8d"
+dependencies = [
+ "libc",
+ "termios",
+]
+
+[[package]]
+name = "libc"
+version = "0.2.139"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
+
+[[package]]
+name = "termios"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5d9cf598a6d7ce700a4e6a9199da127e6819a61e64b68609683cc9a01b5683a"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "tetrust"
 version = "0.1.0"
+dependencies = [
+ "getch",
+]
