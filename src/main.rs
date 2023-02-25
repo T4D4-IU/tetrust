@@ -87,7 +87,7 @@ struct Position {
 fn is_collision(field: &Field, pos: &Position, block: BlockKind) -> bool {
     for y in 0..4 {
         for x in 0..4 {
-            if field[y+pos.y+1][x+pos.x] & BLOCKS[block as usize][y][x] == 1 {
+            if field[y+pos.y][x+pos.x] & BLOCKS[block as usize][y][x] == 1 {
                 return true;
             }
         }
@@ -133,11 +133,16 @@ fn main() {
     // 描画用のフィールド生成
     let mut field_buf = field;
 
-    // 当たり判定
-    if !is_collision(&field, &pos, BlockKind::I) {
-        // posのy座標を更新
+    // 自然落下
+    let new_pos = Position {
+        x: pos.x,
+        y: pos.y + 1,
+    };
+
+    if !is_collision(&field, &new_pos, BlockKind::I) {
         pos.y += 1;
     }
+
 
     // 描画用フィールドにブロックの情報を書き込む
     for y in 0..4 {
@@ -163,10 +168,30 @@ fn main() {
         // 1秒間スリープする
         thread::sleep(time::Duration::from_millis(1000));
 
-        // "q"キーでループを抜ける
+        // キー入力待ち
         match g.getch() {
+            Ok(Key::Left) => {
+                let new_pos = Position {
+                    x: pos.x - 1,
+                    y: pos.y,
+                };
+                if !is_collision(&field, &new_pos, BlockKind::I) {
+                    // posの座標を更新
+                    pos = new_pos;
+                }
+            }
+            Ok(Key::Right) => {
+                let new_pos = Position {
+                    x: pos.x + 1,
+                    y: pos.y,
+                };
+                if !is_collision(&field, &new_pos, BlockKind::I) {
+                    // posの座標を更新
+                    pos = new_pos;
+                }
+            }
             Ok(Key::Char('q')) => break,
-            _ => {} // 何もしない
+            _ => {}, // 何もしない
         }
     }
 
