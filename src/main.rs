@@ -35,10 +35,12 @@ fn main() {
                     fix_block(&mut game);
                     // ラインの削除処理
                     erase_line(&mut game.field);
-                    // posの座標を初期値へ
-                    game.pos = Position::init();
-                    // ブロックをランダムに生成
-                    game.block = rand::random();
+                    // ブロックの生成
+                    if spawn_block(&mut game).is_err() {
+                        // ブロックを生成できないならゲームオーバー
+                        gameover(&game);
+                        break;
+                    }
                 }
                 // フィールドを描画
                 draw (&game);
@@ -79,12 +81,11 @@ fn main() {
                 draw(&game);
             }
             Ok(Key::Char('q')) => {
-                // カーソルを再表示
-                println!("\x1b[?25h");
-                return;
+                break;
             }
             _ => {}, // 何もしない
         }
     }
-
+    // 終了処理
+    quit();
 }
