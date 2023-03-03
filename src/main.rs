@@ -1,24 +1,11 @@
+mod block;
+
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
 use getch_rs::{Getch, Key};
-use rand::{
-    distributions::{Distribution, Standard},
-    Rng,
-};
+use block::{BlockKind, BLOCKS};
 
-impl Distribution<BlockKind> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BlockKind {
-        match rng.gen_range(0..=6) {
-            0 => BlockKind::I,
-            1 => BlockKind::O,
-            2 => BlockKind::S,
-            3 => BlockKind::Z,
-            4 => BlockKind::J,
-            5 => BlockKind::L,
-            _ => BlockKind::T,
-        }
-    }
-}
+
 
 // フィールドを描画する
 fn draw(field: &Field, pos: &Position, block: BlockKind) {
@@ -54,77 +41,7 @@ const FIELD_WIDTH: usize = 11 + 2; // field + wall
 const FIELD_HEIGHT: usize = 20 + 1; // field + botom
 type Field = [[usize; FIELD_WIDTH]; FIELD_HEIGHT];
 
-// blockの種類
-#[derive(Clone, Copy)]
-enum BlockKind {
-    I,
-    O,
-    S,
-    Z,
-    J,
-    L,
-    T,
-}
 
-// blockの形状
-type BlockShape = [[usize; 4]; 4];
-const BLOCKS: [BlockShape; 7] = [
-    // I
-    [
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-        [1, 1, 1, 1],
-        [0, 0, 0, 0],
-    ],
-
-    // O
-    [
-        [0, 0, 0, 0],
-        [0, 1, 1, 0],
-        [0, 1, 1, 0],
-        [0, 0, 0, 0],
-    ],
-
-    // S
-    [
-        [0, 0, 0, 0],
-        [0, 1, 1, 0],
-        [1, 1, 0, 0],
-        [0, 0, 0, 0],
-    ],
-
-    // Z
-    [
-        [0, 0, 0, 0],
-        [1, 1, 0, 0],
-        [0, 1, 1, 0],
-        [0, 0, 0, 0],
-    ],
-
-    // J
-    [
-        [0, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 1, 1, 0],
-        [0, 0, 0, 0],
-    ],
-
-    // L
-    [
-        [0, 0, 0, 0],
-        [0, 0, 1, 0],
-        [1, 1, 1, 0],
-        [0, 0, 0, 0],
-    ],
-
-    // T
-    [
-        [0, 0, 0, 0],
-        [0, 1, 0, 0],
-        [1, 1, 1, 0],
-        [0, 0, 0, 0],
-    ],
-];
 
 struct Position {
     x: usize,
@@ -206,6 +123,21 @@ fn main() {
                         for x in 0..4 {
                             if BLOCKS[*block as usize][y][x] == 1 {
                                 field[y+pos.y][x+pos.x] = 1;
+                            }
+                        }
+                    }
+                    // ラインの削除処理
+                    for y in 1..FIELD_HEIGHT-1 {
+                        let mut can_erase = true;
+                        for x in 1..FIELD_WIDTH-1 {
+                            if field[y][x] == 0 {
+                                can_erase = false;
+                                break;
+                            }
+                        }
+                        if can_erase {
+                            for y2 in (2..=y).rev() {
+                                field[y2] = field[y2-1];
                             }
                         }
                     }
