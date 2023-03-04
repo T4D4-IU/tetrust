@@ -1,7 +1,9 @@
-use crate::block::{BlockKind, BlockShape, BLOCKS};
-use crate::block::{BlockColor, block_kind, COLOR_TABLE,
+use crate::block::{
+    BlockKind, BlockShape, BLOCKS, BlockColor, block_kind, COLOR_TABLE,
     block_kind::WALL as W,
+    gen_block_7,
 };
+
 // fieldsize
 use std::collections::VecDeque;
 pub const FIELD_WIDTH: usize = 11 + 2 + 2; // field + wall
@@ -63,12 +65,13 @@ pub struct Game {
     pub block: BlockShape,
     pub hold: Option<BlockShape>,
     pub holded: bool,
-    pub next: VecDeque<BlockShape>,
+    pub next:     VecDeque<BlockShape>,
+    pub next_buf: VecDeque<BlockShape>,
 }
 
 impl Game {
     pub fn new() -> Game {
-        Game {
+        let mut game = Game {
             field: [
                 [0,W,0,0,0,0,0,0,0,0,0,0,0,W,0],
                 [0,W,0,0,0,0,0,0,0,0,0,0,0,W,0],
@@ -97,14 +100,14 @@ impl Game {
             block: BLOCKS[rand::random::<BlockKind>() as usize],
             hold: None,
             holded: false,
-            next: {
-                let mut deque = VecDeque::new();
-                for _ in 0..NEXT_LENGTH {
-                    deque.push_back(BLOCKS[rand::random::<BlockKind>() as usize]);
-                }
-                deque
-            },
-        }
+            next:     gen_block_7().into(),
+            next_buf: gen_block_7().into(),
+        };
+        // 初期ブロックを供給
+        spawn_block(&mut game).ok();
+
+        game
+
     }
 }
 
@@ -115,8 +118,16 @@ pub fn spawn_block(game: &mut Game) -> Result<(), ()> {
     game.pos = Position::init();
     // ネクストキューから次のブロックを取り出す
     game.block = game.next.pop_front().unwrap();
-    // ブロックをランダム生成して、ネクストキューに追加
-    game.next.push_back(BLOCKS[rand::random::<BlockKind>() as usize]);
+
+    if let Some(next) = game.next_buf.pop_front() {
+        // バフからネクストキューに供給
+        game.next.push_back(next);
+    } else {
+        // バフを生成
+        game.next_buf = gen_block_7().into();
+        // バフからネクストキューに供給
+        game.next.push_back(game.next_buf.pop_front().unwrap());
+    }
     // 衝突チェック
     if is_collision(&game.field, &game.pos, &game.block) {
         Err(())
@@ -127,7 +138,7 @@ pub fn spawn_block(game: &mut Game) -> Result<(), ()> {
 
 #[allow(clippy::needless_range_loop)]
  // フィールドを描画する
-pub fn draw(Game { field, pos, block, hold, holded: _, next }: &Game) {
+ pub fn draw(Game { field, pos, block, hold, holded: _, next, .. }: &Game) {
     // 描画用フィールドの生成
     let mut field_buf = *field;
     // 描画用フィールドにゴーストブロックを書き込む
@@ -158,9 +169,9 @@ pub fn draw(Game { field, pos, block, hold, holded: _, next }: &Game) {
             println!();
         }
     }
-    // 次のブロックを描画
+    // 次のブロックを描画(3つ)
     println!("\x1b[8;28HH NEXT"); // カーソルを移動
-    for (i, next) in next.iter().enumerate() {
+    for (i, next) in next.iter().take(NEXT_LENGTH).enumerate() {
         for y in 0..4 {
             print!("\x1b[{};28H", i*4+y+9); // カーソルを移動
             for x in 0..4 {
