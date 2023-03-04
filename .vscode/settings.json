@@ -3,6 +3,8 @@
         "Deque",
         "enumerate",
         "HHOLD",
-        "HNEXT"
+        "HNEXT",
+        "msec",
+        "saturating"
     ]
 }

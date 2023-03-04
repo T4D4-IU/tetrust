@@ -78,6 +78,7 @@ pub struct Game {
     pub next:     VecDeque<BlockShape>,
     pub next_buf: VecDeque<BlockShape>,
     pub score: usize,
+    pub line: usize,
 }
 
 impl Game {
@@ -114,6 +115,7 @@ impl Game {
             next:     gen_block_7().into(),
             next_buf: gen_block_7().into(),
             score: 0,
+            line: 0,
         };
         // 初期ブロックを供給
         spawn_block(&mut game).ok();
@@ -150,7 +152,7 @@ pub fn spawn_block(game: &mut Game) -> Result<(), ()> {
 
 #[allow(clippy::needless_range_loop)]
  // フィールドを描画する
- pub fn draw(Game { field, pos, block, hold, holded: _, next, next_buf: _, score }: &Game) {
+pub fn draw(Game { field, pos, block, hold, holded: _, next, next_buf: _, score, .. }: &Game) {
     // 描画用フィールドの生成
     let mut field_buf = *field;
     // 描画用フィールドにゴーストブロックを書き込む
@@ -248,6 +250,8 @@ pub fn landing(game: &mut Game) -> Result<(), ()> {
     let line = erase_line(&mut game.field);
     // 消した段数によって得点を加算
     game.score += SCORE_TABLE[line];
+    // 消した段数の合計を加算
+    game.line += line;
     // ブロックの生成
     spawn_block(game)?;
     // 再ホールド可能にする
