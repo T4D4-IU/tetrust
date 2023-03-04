@@ -118,6 +118,17 @@ pub fn draw(Game { field, pos, block, hold, .. }: &Game) {
             }
         }
     }
+    // ホールドを描画
+    println!("\x1b[2;28HHOLD"); // カーソルをホールド位置へ移動
+    if let Some(hold) = hold {
+        for y in 0..4 {
+            print!("\x1b[{};28H", y+3); // カーソルを移動
+            for x in 0..4 {
+                print!("{}", COLOR_TABLE[hold[y][x]]);
+            }
+            println!();
+        }
+    }
     // フィールドを描画
     println!("\x1b[H");  // カーソルを先頭に移動
     for y in 0..FIELD_HEIGHT - 1 {
@@ -126,6 +137,8 @@ pub fn draw(Game { field, pos, block, hold, .. }: &Game) {
         }
         println!();
     }
+    // 色情報をリセット
+    println!("\x1b[0m");
 }
 
 // ブロックをフィールドに固定する
