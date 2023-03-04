@@ -99,6 +99,12 @@ fn main() {
                 }
                 draw(&game);
             }
+            Ok(Key::Char(' ')) => {
+                // hold
+                let mut game = game.lock().unwrap();
+                hold(&mut game);
+                draw(&game);
+            }
             Ok(Key::Char('q')) => {
                 break;
             }
