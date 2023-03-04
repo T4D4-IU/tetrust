@@ -3,6 +3,7 @@ use crate::block::{BlockColor, block_kind, COLOR_TABLE,
     block_kind::WALL as W,
 };
 // fieldsize
+use std::collections::VecDeque;
 pub const FIELD_WIDTH: usize = 11 + 2 + 2; // field + wall
 pub const FIELD_HEIGHT: usize = 20 + 1 + 1; // field + botom
 pub type Field = [[BlockColor; FIELD_WIDTH]; FIELD_HEIGHT];
@@ -53,12 +54,16 @@ impl Position {
     }
 }
 
+// nextblockを3つ表示
+pub const NEXT_LENGTH: usize = 3;
+
 pub struct Game {
     pub field: Field,
     pub pos: Position,
     pub block: BlockShape,
     pub hold: Option<BlockShape>,
     pub holded: bool,
+    pub next: VecDeque<BlockShape>,
 }
 
 impl Game {
@@ -92,13 +97,37 @@ impl Game {
             block: BLOCKS[rand::random::<BlockKind>() as usize],
             hold: None,
             holded: false,
+            next: {
+                let mut deque = VecDeque::new();
+                for _ in 0..NEXT_LENGTH {
+                    deque.push_back(BLOCKS[rand::random::<BlockKind>() as usize]);
+                }
+                deque
+            },
         }
+    }
+}
+
+// blockを生成する
+// 生成に失敗した場合は”Err(())”を返す
+pub fn spawn_block(game: &mut Game) -> Result<(), ()> {
+    // posの座標を初期値へ
+    game.pos = Position::init();
+    // ネクストキューから次のブロックを取り出す
+    game.block = game.next.pop_front().unwrap();
+    // ブロックをランダム生成して、ネクストキューに追加
+    game.next.push_back(BLOCKS[rand::random::<BlockKind>() as usize]);
+    // 衝突チェック
+    if is_collision(&game.field, &game.pos, &game.block) {
+        Err(())
+    } else {
+        Ok(())
     }
 }
 
 #[allow(clippy::needless_range_loop)]
  // フィールドを描画する
-pub fn draw(Game { field, pos, block, hold, .. }: &Game) {
+pub fn draw(Game { field, pos, block, hold, holded: _, next }: &Game) {
     // 描画用フィールドの生成
     let mut field_buf = *field;
     // 描画用フィールドにゴーストブロックを書き込む
@@ -119,12 +148,23 @@ pub fn draw(Game { field, pos, block, hold, .. }: &Game) {
         }
     }
     // ホールドを描画
-    println!("\x1b[2;28HHOLD"); // カーソルをホールド位置へ移動
+    println!("\x1b[2;28HH HOLD"); // カーソルをホールド位置へ移動
     if let Some(hold) = hold {
         for y in 0..4 {
             print!("\x1b[{};28H", y+3); // カーソルを移動
             for x in 0..4 {
                 print!("{}", COLOR_TABLE[hold[y][x]]);
+            }
+            println!();
+        }
+    }
+    // 次のブロックを描画
+    println!("\x1b[8;28HH NEXT"); // カーソルを移動
+    for (i, next) in next.iter().enumerate() {
+        for y in 0..4 {
+            print!("\x1b[{};28H", i*4+y+9); // カーソルを移動
+            for x in 0..4 {
+                print!("{}", COLOR_TABLE[next[y][x]]);
             }
             println!();
         }
@@ -294,21 +334,6 @@ pub fn rotate_left(game: &mut Game) {
     } else if let Ok(new_pos) = super_rotation(&game.field, &game.pos, &new_shape) {
         game.pos = new_pos;
         game.block = new_shape;
-    }
-}
-
-// blockを生成する
-// 生成に失敗した場合は”Err(())”を返す
-pub fn spawn_block(game: &mut Game) -> Result<(), ()> {
-    // posの座標を初期値へ
-    game.pos = Position::init();
-    // ブロックをランダム生成
-    game.block = BLOCKS[rand::random::<BlockKind>() as usize];
-    // 衝突チェック
-    if is_collision(&game.field, &game.pos, &game.block) {
-        Err(())
-    } else {
-        Ok(())
     }
 }
 
